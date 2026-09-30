@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="./images/favicon.svg">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -10,14 +10,37 @@
 
   <title>AI Writing Detector Installed</title>
 
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="./images/favicon.svg"
+  >
+
+  <!--
+    First screenshot is important for the initial experience,
+    so start loading it as early as possible.
+  -->
+  <link
+    rel="preload"
+    as="image"
+    href="./images/welcome-step-1.webp"
+    fetchpriority="high"
+  >
+
   <style>
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
-      padding: 0;
+      min-height: 100%;
+      background: #F7F7F7;
+    }
+
+    body {
+      min-height: 100vh;
 
       font-family:
         -apple-system,
@@ -28,18 +51,7 @@
         Arial,
         sans-serif;
 
-        color: #111827;
-    }
-
-    html,
-    body {
-        margin: 0;
-        min-height: 100%;
-        background: #F7F7F7;
-    }
-
-    body {
-        min-height: 100vh;
+      color: #111827;
     }
 
     .container {
@@ -74,6 +86,27 @@
       font-weight: 400;
     }
 
+    .steps-wrapper {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .steps {
+      display: inline-block;
+
+      margin: 0;
+      padding-left: 28px;
+
+      text-align: left;
+
+      font-size: 20px;
+      line-height: 1.5;
+    }
+
+    .steps li {
+      padding-left: 4px;
+    }
+
     .screenshot {
       display: block;
 
@@ -83,6 +116,33 @@
       margin: 0 auto;
 
       border-radius: 10px;
+    }
+
+    /*
+     * Every piece of content starts hidden.
+     * JavaScript reveals elements strictly from top to bottom.
+     */
+    .reveal {
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(10px);
+
+      transition:
+        opacity 400ms ease,
+        transform 400ms ease;
+    }
+
+    .reveal.visible {
+      visibility: visible;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal {
+        transform: none;
+        transition: none;
+      }
     }
 
     @media (max-width: 600px) {
@@ -100,29 +160,14 @@
         font-size: 18px;
       }
 
+      .steps {
+        font-size: 18px;
+      }
+
       .step {
         margin-bottom: 40px;
       }
     }
-
-    .steps-wrapper {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.steps {
-  display: inline-block;
-  margin: 0;
-  padding-left: 28px;
-
-  text-align: left;
-  font-size: 20px;
-  line-height: 1.5;
-}
-
-.steps li {
-  padding-left: 4px;
-}
   </style>
 </head>
 
@@ -130,33 +175,169 @@
 
   <main class="container">
 
-    <h1>AI Writing Detector Installed</h1>
+    <!-- 1 -->
+    <h1
+      class="reveal"
+      id="welcome-title"
+    >
+      AI Writing Detector Installed
+    </h1>
 
     <section class="step">
 
-    <div class="steps-wrapper">
-    <ol class="steps">
-        <li>Click the puzzle piece icon in the top-right corner of your browser.</li>
-        <li>Then, click the little pin next to the extension.</li>
-    </ol>
-    </div>
+      <!-- 2 -->
+      <div
+        class="steps-wrapper reveal"
+        id="step-1-text"
+      >
+        <ol class="steps">
+          <li>
+            Click the puzzle piece icon in the top-right corner of your browser.
+          </li>
 
-        <img class="screenshot" src="./images/welcome-step-1.webp" alt="Pin AI Writing Detector">
+          <li>
+            Then, click the little pin next to the extension.
+          </li>
+        </ol>
+      </div>
+
+      <!-- 3 -->
+      <img
+        class="screenshot reveal"
+        id="step-1-image"
+        src="./images/welcome-step-1.webp"
+        alt="Pin AI Writing Detector"
+        width="1600"
+        height="888"
+        fetchpriority="high"
+        decoding="async"
+      >
 
     </section>
 
-
     <section class="step">
 
-      <p class="step-text">
-         Simply click on the extension icon to open the <bold>AI Writing Detector</bold>.
+      <!-- 4 -->
+      <p
+        class="step-text reveal"
+        id="step-2-text"
+      >
+        Simply click on the extension icon to open the
+        <strong>AI Writing Detector</strong>.
       </p>
 
-      <img class="screenshot" src="./images/welcome-step-2.webp" alt="AI Writing Detector pinned">
+      <!-- 5 -->
+      <img
+        class="screenshot reveal"
+        id="step-2-image"
+        src="./images/welcome-step-2.webp"
+        alt="AI Writing Detector pinned"
+        width="1600"
+        height="882"
+        fetchpriority="low"
+        decoding="async"
+      >
 
     </section>
 
   </main>
+
+  <script>
+    const BETWEEN_ELEMENTS_DELAY_MS = 180;
+
+    const delay = (ms) =>
+      new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      });
+
+    const nextFrame = () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+    const waitForImage = async (image) => {
+      if (!image.complete) {
+        await new Promise((resolve) => {
+          image.addEventListener(
+            "load",
+            resolve,
+            { once: true }
+          );
+
+          image.addEventListener(
+            "error",
+            resolve,
+            { once: true }
+          );
+        });
+      }
+
+      /*
+       * Loading is not always the same as being ready to paint.
+       * decode() lets the browser finish decoding before reveal.
+       */
+      if (typeof image.decode === "function") {
+        try {
+          await image.decode();
+        } catch {
+          // If decoding fails, reveal anyway.
+        }
+      }
+    };
+
+    const reveal = async (element) => {
+      await nextFrame();
+
+      element.classList.add("visible");
+
+      await delay(BETWEEN_ELEMENTS_DELAY_MS);
+    };
+
+    const start = async () => {
+      const title =
+        document.getElementById("welcome-title");
+
+      const step1Text =
+        document.getElementById("step-1-text");
+
+      const step1Image =
+        document.getElementById("step-1-image");
+
+      const step2Text =
+        document.getElementById("step-2-text");
+
+      const step2Image =
+        document.getElementById("step-2-image");
+
+      /*
+       * Strict top-to-bottom sequence.
+       *
+       * Nothing below can appear before everything
+       * above it has been shown.
+       */
+
+      // 1. Show title immediately.
+      await reveal(title);
+
+      // 2. Show first instructions.
+      await reveal(step1Text);
+
+      // 3. Wait until screenshot 1 is actually ready.
+      await waitForImage(step1Image);
+      await reveal(step1Image);
+
+      // 4. Only now show second instructions.
+      await reveal(step2Text);
+
+      // 5. Finally reveal screenshot 2.
+      await waitForImage(step2Image);
+      await reveal(step2Image);
+    };
+
+    start();
+  </script>
 
 </body>
 </html>
